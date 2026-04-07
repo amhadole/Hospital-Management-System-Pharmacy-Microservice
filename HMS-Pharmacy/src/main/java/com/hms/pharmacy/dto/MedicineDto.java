@@ -21,9 +21,10 @@ public class MedicineDto {
 	private MedicineType type;
 	private String manufacturer;
 	private Integer unitPrice;
+	private Integer stock;
 	private LocalDateTime createdAt;
-	
+
 	public Medicine toEntity() {
-		return new Medicine(id, name, dosage, category, type, manufacturer, unitPrice, createdAt);
+		return new Medicine(id, name, dosage, category, type, manufacturer, unitPrice, stock, createdAt);
 	}
-}	
+}

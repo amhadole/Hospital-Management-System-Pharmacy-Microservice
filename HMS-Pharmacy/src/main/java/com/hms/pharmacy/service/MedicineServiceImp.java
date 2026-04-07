@@ -12,36 +12,41 @@ import com.hms.pharmacy.exception.HmsException;
 import com.hms.pharmacy.repository.MedicineRepository;
 
 @Service
-public class MedicineServiceImp implements MedicineService{
+public class MedicineServiceImp implements MedicineService {
 	private final MedicineRepository medicineRepository;
-	
+
 	public MedicineServiceImp(MedicineRepository medicineRepository) {
 		this.medicineRepository = medicineRepository;
 	}
 
 	@Override
 	public Long addMedicine(MedicineDto medicineDto) throws HmsException {
-		Optional<Medicine> opt = medicineRepository.findByNameIgnoreCaseAndDosageIgnoreCase(medicineDto.getName(), medicineDto.getDosage());
-		if(opt.isPresent()) {
+		Optional<Medicine> opt = medicineRepository.findByNameIgnoreCaseAndDosageIgnoreCase(medicineDto.getName(),
+				medicineDto.getDosage());
+		if (opt.isPresent()) {
 			throw new HmsException("MEDICINE_ALREADY_EXISTS");
 		}
+		medicineDto.setStock(0);
 		medicineDto.setCreatedAt(LocalDateTime.now());
 		return medicineRepository.save(medicineDto.toEntity()).getId();
-		
+
 	}
 
 	@Override
 	public MedicineDto getMedicineById(Long id) throws HmsException {
-		
-		return medicineRepository.findById(id).orElseThrow(()-> new HmsException("MEDICINE_NOT_FOUND")).toDto();
+
+		return medicineRepository.findById(id).orElseThrow(() -> new HmsException("MEDICINE_NOT_FOUND")).toDto();
 	}
 
 	@Override
 	public String updateMedicine(MedicineDto medicineDto) throws HmsException {
-		Medicine existingMedicine = medicineRepository.findById(medicineDto.getId()).orElseThrow(()-> new HmsException("MEDICINE_NOT_FOUND"));
-		if(!(medicineDto.getName().equalsIgnoreCase(existingMedicine.getName()) && medicineDto.getDosage().equalsIgnoreCase(existingMedicine.getDosage()))) {
-			Optional<Medicine> opt = medicineRepository.findByNameIgnoreCaseAndDosageIgnoreCase(medicineDto.getName(), medicineDto.getDosage());
-			if(opt.isPresent()) {
+		Medicine existingMedicine = medicineRepository.findById(medicineDto.getId())
+				.orElseThrow(() -> new HmsException("MEDICINE_NOT_FOUND"));
+		if (!(medicineDto.getName().equalsIgnoreCase(existingMedicine.getName())
+				&& medicineDto.getDosage().equalsIgnoreCase(existingMedicine.getDosage()))) {
+			Optional<Medicine> opt = medicineRepository.findByNameIgnoreCaseAndDosageIgnoreCase(medicineDto.getName(),
+					medicineDto.getDosage());
+			if (opt.isPresent()) {
 				throw new HmsException("MEDICINE_ALREADY_EXISTS");
 			}
 		}
@@ -58,5 +63,27 @@ public class MedicineServiceImp implements MedicineService{
 	@Override
 	public List<MedicineDto> getAllMedicines() throws HmsException {
 		return medicineRepository.findAll().stream().map(Medicine::toDto).toList();
+	}
+
+	@Override
+	public Integer getStockById(Long id) throws HmsException {
+
+		return medicineRepository.findStockById(id).orElseThrow(() -> new HmsException("MEDICINE_NOT_FOUND"));
+	}
+
+	@Override
+	public Integer addStock(Long id, Integer quantity) throws HmsException {
+		Medicine medicine = medicineRepository.findById(id).orElseThrow(() -> new HmsException("MEDICINE_NOT_FOUND"));
+		medicine.setStock(medicine.getStock() != null ? medicine.getStock() + quantity : quantity);
+		medicineRepository.save(medicine);
+		return medicine.getStock();
+	}
+
+	@Override
+	public Integer removeStock(Long id, Integer quantity) throws HmsException {
+		Medicine medicine = medicineRepository.findById(id).orElseThrow(() -> new HmsException("MEDICINE_NOT_FOUND"));
+		medicine.setStock(medicine.getStock() != null ? medicine.getStock() - quantity : 0);
+		medicineRepository.save(medicine);
+		return medicine.getStock();
 	}
 }
