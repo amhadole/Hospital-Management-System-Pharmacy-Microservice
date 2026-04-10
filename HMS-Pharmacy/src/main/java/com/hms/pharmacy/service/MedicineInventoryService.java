@@ -15,4 +15,7 @@ public interface MedicineInventoryService {
 	MedicineInventoryDto updateMedicine(MedicineInventoryDto medicineInventoryDto) throws HmsException;
 
 	String deleteMedicine(Long id) throws HmsException;
+	
+	void deleteExpiredMedicines()throws HmsException;
+
 }

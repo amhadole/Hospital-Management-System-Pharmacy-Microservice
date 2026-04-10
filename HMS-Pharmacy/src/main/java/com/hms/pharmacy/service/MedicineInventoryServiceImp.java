@@ -1,13 +1,14 @@
 package com.hms.pharmacy.service;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.hms.pharmacy.dto.MedicineInventoryDto;
 import com.hms.pharmacy.entity.MedicineInventory;
+import com.hms.pharmacy.enums.StockStatus;
 import com.hms.pharmacy.exception.HmsException;
 import com.hms.pharmacy.repository.MedicineInventoryRepository;
 
@@ -42,6 +43,8 @@ public class MedicineInventoryServiceImp implements MedicineInventoryService {
 
 		medicineInventoryDto.setAddedDate(LocalDate.now());
 		medicineService.addStock(medicineInventoryDto.getMedicineId(), medicineInventoryDto.getQuantity());
+		medicineInventoryDto.setInitialQuantity(medicineInventoryDto.getQuantity());
+		medicineInventoryDto.setStatus(StockStatus.ACTIVE);
 		return medicineInventoryRepository.save(medicineInventoryDto.toEntity()).toDto();
 	}
 
@@ -58,6 +61,7 @@ public class MedicineInventoryServiceImp implements MedicineInventoryService {
 					existingInventory.getQuantity() - medicineInventoryDto.getQuantity());
 		}
 		existingInventory.setQuantity(medicineInventoryDto.getQuantity());
+		existingInventory.setInitialQuantity(medicineInventoryDto.getInitialQuantity());
 		existingInventory.setExpiryDate(medicineInventoryDto.getExpiryDate());
 		return medicineInventoryRepository.save(existingInventory).toDto();
 
@@ -68,6 +72,26 @@ public class MedicineInventoryServiceImp implements MedicineInventoryService {
 		medicineInventoryRepository.deleteById(id);
 		return "Inventory Delete Successfully";
 
+	}
+
+	public void markExpired(List<MedicineInventory> inventories) throws HmsException {
+		for (MedicineInventory inventory : inventories) {
+			if (inventory.getExpiryDate().isBefore(LocalDate.now())) {
+				inventory.setStatus(StockStatus.EXPIRED);
+			}
+		}
+		medicineInventoryRepository.saveAll(inventories);
+	}
+
+	@Override
+	@Scheduled(cron = "0 14 17 * * ?")
+	public void deleteExpiredMedicines() throws HmsException {
+		System.out.println("Deleting Expired medicine...");
+		List<MedicineInventory> expiredMedicines = medicineInventoryRepository.findByExpiryDateBefore(LocalDate.now());
+		for (MedicineInventory medicine : expiredMedicines) {
+			medicineService.removeStock(medicine.getMedicine().getId(), medicine.getQuantity());
+		}
+		this.markExpired(expiredMedicines);
 	}
 
 }
