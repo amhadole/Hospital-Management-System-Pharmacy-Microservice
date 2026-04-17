@@ -53,15 +53,15 @@ public class MedicineInventoryServiceImp implements MedicineInventoryService {
 		MedicineInventory existingInventory = medicineInventoryRepository.findById(medicineInventoryDto.getId())
 				.orElseThrow(() -> new HmsException("INVENTORY_NOT_FOUND"));
 		existingInventory.setBatchNo(medicineInventoryDto.getBatchNo());
-		if (existingInventory.getQuantity() < medicineInventoryDto.getQuantity()) {
+		if (existingInventory.getInitialQuantity() < medicineInventoryDto.getQuantity()) {
 			medicineService.addStock(medicineInventoryDto.getMedicineId(),
-					medicineInventoryDto.getQuantity() - existingInventory.getQuantity());
-		} else if (existingInventory.getQuantity() > medicineInventoryDto.getQuantity()) {
+					medicineInventoryDto.getQuantity() - existingInventory.getInitialQuantity());
+		} else if (existingInventory.getInitialQuantity() > medicineInventoryDto.getQuantity()) {
 			medicineService.removeStock(medicineInventoryDto.getMedicineId(),
-					existingInventory.getQuantity() - medicineInventoryDto.getQuantity());
+					existingInventory.getInitialQuantity() - medicineInventoryDto.getQuantity());
 		}
 		existingInventory.setQuantity(medicineInventoryDto.getQuantity());
-		existingInventory.setInitialQuantity(medicineInventoryDto.getInitialQuantity());
+		existingInventory.setInitialQuantity(medicineInventoryDto.getQuantity());
 		existingInventory.setExpiryDate(medicineInventoryDto.getExpiryDate());
 		return medicineInventoryRepository.save(existingInventory).toDto();
 
