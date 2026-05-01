@@ -5,17 +5,20 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.hms.pharmacy.dto.SaleItemDto;
+import com.hms.pharmacy.entity.Sale;
 import com.hms.pharmacy.entity.SaleItem;
 import com.hms.pharmacy.exception.HmsException;
 import com.hms.pharmacy.repository.SaleItemRepository;
+import com.hms.pharmacy.repository.SaleRepository;
 
 @Service
 public class SaleItemServiceImp implements SaleItemService{
 	
 	private final SaleItemRepository saleItemRepository;
-	
-	public SaleItemServiceImp(SaleItemRepository saleItemRepository) {
+	private final SaleRepository saleRepository;
+	public SaleItemServiceImp(SaleItemRepository saleItemRepository, SaleRepository saleRepository) {
 		this.saleItemRepository = saleItemRepository;
+		this.saleRepository = saleRepository;
 	}
 
 	@Override
@@ -53,4 +56,13 @@ public class SaleItemServiceImp implements SaleItemService{
 		return saleItemRepository.findById(id).map(SaleItem::toDto).orElseThrow(()-> new HmsException("SALE_ITEM_NOT_FOUND"));
 	}
 	
+	@Override
+	public void createSaleItems(Long saleId, List<SaleItemDto> saleItemDtos) throws HmsException{
+		Sale sale = saleRepository.findById(saleId).orElseThrow(()-> new HmsException("SALE_NOT_FOUND"));
+		saleItemDtos.stream().map((x)->{
+			SaleItem item = x.toEntity();
+			item.setSale(sale);
+			return item;
+		}).forEach(saleItemRepository::save);
+	}
 }

@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.hms.pharmacy.dto.ApiResponse;
 import com.hms.pharmacy.dto.SaleDto;
 import com.hms.pharmacy.dto.SaleItemDto;
+import com.hms.pharmacy.dto.SaleRequest;
 import com.hms.pharmacy.exception.HmsException;
 import com.hms.pharmacy.service.SaleItemService;
 import com.hms.pharmacy.service.SaleService;
@@ -36,8 +37,8 @@ public class SaleController {
 	}
 	
 	@PostMapping("/createSale")
-	public ResponseEntity<ApiResponse<Long>> createSale(@RequestBody SaleDto saleDto)throws HmsException{
-		Long sale = saleService.createSale(saleDto);
+	public ResponseEntity<ApiResponse<Long>> createSale(@RequestBody SaleRequest saleRequestDto)throws HmsException{
+		Long sale = saleService.createSale(saleRequestDto);
 		ApiResponse<Long> response = new ApiResponse<Long>(HttpStatus.CREATED.value(), "Sale Created Successfully", sale, LocalDateTime.now());
 		return new ResponseEntity<ApiResponse<Long>>(response, HttpStatus.CREATED);
 	}

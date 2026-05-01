@@ -1,10 +1,11 @@
 package com.hms.pharmacy.service;
 
 import com.hms.pharmacy.dto.SaleDto;
+import com.hms.pharmacy.dto.SaleRequest;
 import com.hms.pharmacy.exception.HmsException;
 
 public interface SaleService {
-	Long createSale(SaleDto saleDto)throws HmsException;
+	Long createSale(SaleRequest saleRequestDto)throws HmsException;
 	
 	SaleDto getSaleById(Long id)throws HmsException;
 	

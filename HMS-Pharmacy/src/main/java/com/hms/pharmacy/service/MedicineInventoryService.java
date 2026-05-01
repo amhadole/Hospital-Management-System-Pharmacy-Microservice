@@ -17,5 +17,7 @@ public interface MedicineInventoryService {
 	String deleteMedicine(Long id) throws HmsException;
 	
 	void deleteExpiredMedicines()throws HmsException;
+	
+	public String sellStock(Long medicineId, Integer quantity)throws HmsException;
 
 }

@@ -15,4 +15,6 @@ public interface SaleItemService {
 	List<SaleItemDto> getSaleItemBySaleId(Long saleId)throws HmsException;
 	
 	SaleItemDto getSaleItem(Long id)throws HmsException;
+	
+	void createSaleItems(Long saleId, List<SaleItemDto> saleItemDtos)throws HmsException;
 }

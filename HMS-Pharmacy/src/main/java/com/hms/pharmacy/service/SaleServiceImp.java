@@ -5,25 +5,39 @@ import java.time.LocalDateTime;
 import org.springframework.stereotype.Service;
 
 import com.hms.pharmacy.dto.SaleDto;
+import com.hms.pharmacy.dto.SaleItemDto;
+import com.hms.pharmacy.dto.SaleRequest;
 import com.hms.pharmacy.entity.Sale;
 import com.hms.pharmacy.exception.HmsException;
 import com.hms.pharmacy.repository.SaleRepository;
 
+import jakarta.transaction.Transactional;
+
 @Service
 public class SaleServiceImp implements SaleService {
 	private final SaleRepository saleRepository;
-
-	public SaleServiceImp(SaleRepository saleRepository) {
+	private final SaleItemService saleItemService;
+	private final MedicineInventoryService medicineInventoryService;
+	
+	public SaleServiceImp(SaleRepository saleRepository, SaleItemService saleItemService ,MedicineInventoryService medicineInventoryService) {
 		this.saleRepository = saleRepository;
+		this.saleItemService = saleItemService;
+		this.medicineInventoryService = medicineInventoryService;
 	}
 
 	@Override
-	public Long createSale(SaleDto saleDto) throws HmsException {
-		if (saleRepository.existsByPrescriptionId(saleDto.getPrescriptionId())) {
+	@Transactional  
+	public Long createSale(SaleRequest saleRequestDto) throws HmsException {
+		if (saleRepository.existsByPrescriptionId(saleRequestDto.getPrescriptionId())) {
 			throw new HmsException("SALE_ALREADY_EXISTS");
 		}
-		saleDto.setSaleDate(LocalDateTime.now());
-		return saleRepository.save(saleDto.toEntity()).getId();
+		for(SaleItemDto saleItem: saleRequestDto.getSaleItems()) {
+			saleItem.setBatchNo(medicineInventoryService.sellStock(saleItem.getMedicineId(), saleItem.getQuantity()));
+		}
+		Sale sale = new Sale(null, saleRequestDto.getPrescriptionId(), LocalDateTime.now(), saleRequestDto.getTotalAmount());
+		sale = saleRepository.save(sale);
+		saleItemService.createSaleItems(sale.getId(), saleRequestDto.getSaleItems());
+		return sale.getId();
 	}
 
 	@Override

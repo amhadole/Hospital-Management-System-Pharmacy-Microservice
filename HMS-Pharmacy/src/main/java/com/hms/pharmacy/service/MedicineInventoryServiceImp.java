@@ -84,7 +84,7 @@ public class MedicineInventoryServiceImp implements MedicineInventoryService {
 	}
 
 	@Override
-	@Scheduled(cron = "0 14 17 * * ?")
+	@Scheduled(cron = "0 0 0 * * ?")
 	public void deleteExpiredMedicines() throws HmsException {
 		System.out.println("Deleting Expired medicine...");
 		List<MedicineInventory> expiredMedicines = medicineInventoryRepository.findByExpiryDateBefore(LocalDate.now());
@@ -94,4 +94,38 @@ public class MedicineInventoryServiceImp implements MedicineInventoryService {
 		this.markExpired(expiredMedicines);
 	}
 
+	@Override
+	@Transactional
+	public String sellStock(Long medicineId, Integer quantity) throws HmsException {
+		List<MedicineInventory> inventories = medicineInventoryRepository.findByMedicineIdAndExpiryDateAfterAndQuantityGreaterThanAndStatusOrderByExpiryDateAsc(medicineId, LocalDate.now(), 0, StockStatus.ACTIVE);
+		if(inventories.isEmpty()) {
+			throw new HmsException("OUT_OF_STOCK");
+		}
+		StringBuilder batchDetails = new StringBuilder();
+		int remainingQuantity = quantity;
+		for(MedicineInventory inventory: inventories) {
+			if(remainingQuantity <= 0) {
+				break;
+			}
+			int availableQuantity = inventory.getQuantity();
+			if(availableQuantity <= remainingQuantity) {
+				batchDetails.append(String.format("Batch %s: %d units\n", inventory.getBatchNo(), availableQuantity));
+				remainingQuantity = remainingQuantity - availableQuantity;
+				inventory.setQuantity(0);
+				inventory.setStatus(StockStatus.EXPIRED);
+			}else {
+				batchDetails.append(String.format("Batch %s: %d units\n", inventory.getBatchNo(), remainingQuantity));
+				inventory.setQuantity(availableQuantity - remainingQuantity);
+				remainingQuantity = 0;
+			}
+		}
+		if(remainingQuantity > 0) {
+			throw new HmsException("INSUFFICINET_STOCK");
+		}
+		medicineService.removeStock(medicineId, quantity);
+		medicineInventoryRepository.saveAll(inventories);
+		return batchDetails.toString();
+	}
+	
+	
 }
